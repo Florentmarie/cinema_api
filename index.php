@@ -15,7 +15,12 @@ Toro::serve(array(
     "/users/:number/likes" => "UsersLikes",
     "/users/:number/likes/:number" => "UsersLikes",
     "/users/:number/dislikes" => "UsersDislikes",
-    "/users/:number/dislikes/:number" => "UsersDislikes"
+    "/users/:number/dislikes/:number" => "UsersDislikes",
+    "/users/:number/watched" => "UsersWatched",
+    "/users/:number/watched/:number" => "UsersWatched",
+    "/users/:number/watchlist" => "UsersWatchList",
+    "/users/:number/watchlist/:number" => "UsersWatchList",
+    
 
 ));
 
@@ -56,12 +61,19 @@ class UsersWithId {
     echo json_encode($test);
     }
 
-    /*function put($id, $name) {
+    function put($id, $name) {
 		global $db;
-      	$sql = "UPDATE `users` SET `name` = '".$name."' WHERE `users`.`id` = ".$id.";";
-      	echo "Le users est bien modifié";
-		$db->query($sql);
-    }*/
+        if ($name != "likes" && $name != "dislikes" && $name != "watched" && $name != "watchlist") {
+          $sql = "UPDATE `users` SET `name` = '".$name."' WHERE `users`.`id` = ".$id.";";
+          $db->query($sql);
+
+          $query = $db->prepare('SELECT * FROM `users` WHERE `id` = '.$id.' ORDER BY `id` ASC');
+          $query->execute();
+          $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+          echo json_encode($test);
+        }
+    }
 
     function delete($id) {
 		global $db;
@@ -80,9 +92,7 @@ class UsersWithId {
 class UsersLikes {
   function get($id) {
     global $db;
-   // $query = $db->prepare("SELECT `movies`.`title` FROM `movies`, `liaison` WHERE `user_id` =".$id." AND `movies_id` = `movies`.`id` ORDER BY `movies`.`id` ASC");
     $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `liked` = 1) ");
-    //echo ("SELECT * FROM `liaison` WHERE `user_id` = ".$id." ORDER BY `user_id` ASC");
     $query->execute();
     $test = $query->fetchAll(PDO::FETCH_ASSOC);
 
@@ -116,9 +126,7 @@ class UsersLikes {
 class UsersDislikes {
   function get($id) {
     global $db;
-   // $query = $db->prepare("SELECT `movies`.`title` FROM `movies`, `liaison` WHERE `user_id` =".$id." AND `movies_id` = `movies`.`id` ORDER BY `movies`.`id` ASC");
     $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `liked` = 0) ");
-    //echo ("SELECT * FROM `liaison` WHERE `user_id` = ".$id." ORDER BY `user_id` ASC");
     $query->execute();
     $test = $query->fetchAll(PDO::FETCH_ASSOC);
 
@@ -149,6 +157,75 @@ class UsersDislikes {
     }
 }
 
+
+class UsersWatched {
+  function get($id) {
+    global $db;
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watched` = 1) ");
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+
+    function post($id, $movie_id) {
+    global $db;
+    $sql = 'INSERT INTO `liaison` (`user_id`, `movies_id`, `liked`, `watched`) VALUES ('.$id.', '.$movie_id.', 0, 1)';
+    $db->query($sql);
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watched` = 1) ");
+    
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+    function delete($id, $movie_id) {
+    global $db;
+    $sql = "DELETE FROM `liaison` WHERE `liaison`.`user_id` = ".$id." AND `liaison`.`movies_id` = ".$movie_id." ";
+    $db->query($sql);
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watched` = 1) ");
+    
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+}
+
+
+class UsersWatchList {
+  function get($id) {
+    global $db;
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watchlist` = 1) ");
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+
+    function post($id, $movie_id) {
+    global $db;
+    $sql = 'INSERT INTO `liaison` (`user_id`, `movies_id`, `liked`, `watched`, watchlist) VALUES ('.$id.', '.$movie_id.', 0, 1, 1)';
+    $db->query($sql);
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watchlist` = 1) ");
+    
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+    function delete($id, $movie_id) {
+    global $db;
+    $sql = "DELETE FROM `liaison` WHERE `liaison`.`user_id` = ".$id." AND `liaison`.`movies_id` = ".$movie_id." ";
+    $db->query($sql);
+    $query = $db->prepare("SELECT * FROM `movies` WHERE `id` IN (SELECT `movies_id` FROM `liaison` WHERE user_id = ".$id." AND `watchlist` = 1) ");
+    
+    $query->execute();
+    $test = $query->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($test);
+    }
+}
 
 
 
