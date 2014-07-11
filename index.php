@@ -24,6 +24,11 @@ Toro::serve(array(
 
 ));
 
+ToroHook::add("404",  function() {
+  echo "404 not found";
+});
+
+
 class Users {
     function get() {
 	global $db;
